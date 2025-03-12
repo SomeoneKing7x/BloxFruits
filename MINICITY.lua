@@ -1,6 +1,17 @@
+--[[local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Notify = ReplicatedStorage:WaitForChild("Notify") -- Certifique-se de que 'Notify' é um objeto que tem o método Display
 
+if Notify then
+    Notify("<Color=Yellow>Loading<Color=/>"):Display()
+else
+    warn("Notify ou o método Display não foram encontrados.")
+end
 
-
+--Notify = game:GetService("ReplicatedStorage").Notify;
+--Notify("<Color=Yellow>Loading<Color=/>"):Display()
+-- Agora você pode manipular a instância de Notify diretamente
+print(Notify.Name)  -- Exemplo de como imprimir o nome da instância
+]]--
 
 
 
@@ -109,6 +120,11 @@ Invite = "Convite kkk"
 
 
 
+--//QUEST
+
+
+
+
 
 
 
@@ -196,18 +212,15 @@ PVP:AddToggle({
                         local targetPlayer = game:GetService("Players"):FindFirstChild(_G.SelectPly)
 
                         if targetPlayer and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") then
-                            local targetHRP = targetPlayer.Character.HumanoidRootPart
-                            
-                            -- Fase 1: Subir até 100 de altura na posição atual
-                          --  Tween2(localHRP.CFrame * CFrame.new(0, 100, 0))
-                        --    task.wait(0.05) -- Pequena pausa
-
-                            -- Fase 2: Mover até 100 de altura do jogador alvo
-                     --       Tween2(targetHRP.CFrame * CFrame.new(0, 100, 0))
-                       --     task.wait(0.05)
-
-                            -- Fase 3: Descer até 20 de altura do jogador alvo
-                            Tween2(targetHRP.CFrame * CFrame.new(0, 20, 0))
+                            local targetHRP = targetPlayer.Character.HumanoidRootPart.Position
+                            if game:GetService("Players"):FindFirstChild(_G.SelectPly).Character:FindFirstChildOfClass("Humanoid") and game:GetService("Players"):FindFirstChild(_G.SelectPly).Character:FindFirstChildOfClass("Humanoid").Health > 0 then
+              NewtargetHRP = targetHRP + Vector3.new(0,30,0)
+              Tween2(CFrame.new(NewtargetHRP))
+              else
+              NewtargetHRP = targetHRP + Vector3.new(0,0,0)
+                            Tween2(CFrame.new(NewtargetHRP))
+                                game.ReplicatedStorage.DefaultChatSystemChatEvents.SayMessageRequest:FireServer("/Revistar Morto", "All")
+                            end
                         end
                     end)
 
@@ -217,6 +230,7 @@ PVP:AddToggle({
         end)
     end
 })
+
 function isnil(thing)
 return (thing == nil)
 end
@@ -320,6 +334,144 @@ PVP:AddToggle({
         end
     end
 })
+PVP:AddToggle({
+    Title = "Auto Shoot",
+    Callback = function(isActive)
+        if isActive then
+            -- Definir a taxa de clique por segundo
+            local clicksPerSecond = 10 -- Ajuste o valor conforme necessário
+
+            -- Função para simular o clique no centro da tela
+            local function simulateClick()
+                while isActive do
+                    -- Obtém o centro da tela
+                    local center = game:GetService("Workspace").CurrentCamera:WorldToScreenPoint(Vector3.new(0, 0, 0)) 
+
+                    -- Simula o clique no centro
+                    local mouse = game.Players.LocalPlayer:GetMouse()
+                    local clickPosition = Vector2.new(center.X, center.Y)
+
+                    -- Simula o evento de clique
+                    mouse:ClickButton1()
+
+                    -- Espera o tempo necessário entre cliques
+                    wait(1 / clicksPerSecond)
+                end
+            end
+
+            -- Inicia a simulação de cliques
+            spawn(simulateClick)
+        else
+            -- Parar a simulação se o toggle for desmarcado
+            -- Você pode adicionar lógica para parar a função se necessário
+        end
+    end
+})
+-- Função para detectar jogadores com vida 0 no MapaGeral e retornar a posição
+local function detectarJogadoresComVidaZero()
+  local jogador = game.Players.LocalPlayer -- Pega o jogador local
+  local minhaPosicao = jogador.Character and jogador.Character:FindFirstChild("HumanoidRootPart") and jogador.Character.HumanoidRootPart.Position
+
+  if not minhaPosicao then return end -- Retorna se não encontrar a posição do jogador
+
+  for _, player in pairs(workspace.MapaGeral:GetChildren()) do
+    if player:IsA("Model") and player:FindFirstChild("Humanoid") then
+      local humanoid = player:FindFirstChild("Humanoid")
+      if humanoid and humanoid.Health == 0 then
+        -- Verifica se o jogador tem uma posição (model humanoid root part)
+        local humanoidRootPart = player:FindFirstChild("HumanoidRootPart")
+        if humanoidRootPart then
+        Tween2(CFrame.new(humanoidRootPart.Position)) --
+          local distancia = (humanoidRootPart.Position - minhaPosicao).magnitude -- Calcula a distância
+
+          -- Verifica se a distância é menor que 5 antes de mover ou enviar mensagem
+          if distancia < 5 then
+            -- Envia o comando de chat caso a distância seja menor que 5
+            game.ReplicatedStorage.DefaultChatSystemChatEvents.SayMessageRequest:FireServer("/revistar morto", "All")
+            print("Comando enviado para revistar morto!")
+
+            -- Chama a função Tween2 para mover algo para a posição do jogador com vida 0
+            -- Mover para a posição do jogador com vida 0
+          end
+        end
+      end
+    end
+  end
+end
+PVP:AddToggle({
+	Title = "Pegar Copos Já Mortos",
+	Callback = function(value)
+	detectarJogadoresComVidaZero = value
+end})
+PVP:AddToggle({
+  Title = "auto roubar (quando revistar)",
+  Content = "sei",
+  Callback = function()
+    -- Função para deletar todas as NotifyGui
+    local function deletarNotifyGui()
+      local playerGui = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+      for _, gui in ipairs(playerGui:GetChildren()) do
+        if gui.Name == "NotifyGui" and gui:IsA("ScreenGui") then
+          gui:Destroy() -- Deleta a NotifyGui
+        end
+      end
+    end
+
+    -- Lista de itens para pegar
+    local itens = { "AK47", "Uzi", "Parafal", "Faca", "IA2", "G3", "IPhone 14", "Agua", "Hamburguer", "Hi Power", "Natalina", "AR-15" }
+
+    -- Argumentos para a requisição
+    local args = {
+      [1] = "mudaInv",
+      [2] = "2",
+      [4] = "1"
+    }
+
+    -- Loop principal
+    while true do
+      -- Deletar todas as NotifyGui antes de pegar os itens
+      deletarNotifyGui()
+
+      -- Pegar itens
+      for i, item in ipairs(itens) do
+        if i <= 16 then -- Só tenta alocar até 16 slots
+          args[3] = item -- Atualiza o item para o valor da vez
+          args[2] = tostring(i) -- Atribui o slot dinamicamente (1, 2, 3, ..., 16)
+
+          -- Usar task.spawn() para execução sem delay
+          task.spawn(function()
+            -- Envia a requisição para o servidor
+            game:GetService("ReplicatedStorage"):WaitForChild("Modules"):WaitForChild("InvRemotes"):WaitForChild("InvRequest"):InvokeServer(unpack(args))
+          end)
+        end
+      end
+
+      wait() -- Espera um frame para evitar lag
+    end
+  end
+})
+--//Teleport
+Teleport:AddButton({
+	Title = "Get Cord",
+	Callback = function()
+	setclipboard(tostring(game.Players.LocalPlayer.Character.HumanoidRootPart.Position))
+	end
+	})
+
+locais = {
+	
+	}
+Teleport:AddDropdown({
+	Title = "Select Local",
+	Options = locais,
+	Callback= function(value)
+     _G.SelectLocal = value
+    end})
+
+
+
+
+
 
 
 --//SETTINGS 
@@ -341,10 +493,5 @@ spawn(function()
 				end)
 			end
 		end)
-Teleport:AddButton({
-	Title = "Get Cord",
-	Callback = function()
-	setclipboard(tostring(game.Players.LocalPlayer.Character.HumanoidRootPart.Position))
-	end
-	})
+
 --[[AINNNN MINHA XERECA]]--
